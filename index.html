@@ -10,18 +10,8 @@
 </head>
 <body>
 <div class="site">
-<aside class="sb">
-  <div class="sb-logo"><span class="handle">shreekara</span><span class="sub">security researcher · ctf player</span></div>
-  <nav><ul>
-    <li><a href="index.html" class="active"><span class="tilde">~/</span>home</a></li>
-    <li><a href="about/index.html"><span class="tilde">~/</span>about</a></li>
-    <li><a href="blog/index.html"><span class="tilde">~/</span>blog</a></li>
-  </ul></nav>
-  <div class="sb-foot"><div><span class="dot"></span>online</div><div style="margin-top:6px;color:var(--fg-dark);">HTB · THM · CTFtime</div></div>
-</aside>
-
-<div class="content-wrap">
 <main>
+
 <div class="ascii"> ██████╗██╗  ██╗██████╗ ██████╗██████╗
  ██╔════╝██║  ██║██╔══██╗██╔════╝██╔════╝
  █████╗ ███████║██████╔╝█████╗  █████╗  
@@ -30,7 +20,6 @@
  ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝╚═════╝</div>
 <div class="prompt-l"><span class="u">shreekara</span>@<span class="h">kali</span>:~$</div>
 
-
 <div class="cmd">
   <div class="cmd-line"><span class="d">$</span><span class="c">whoami</span></div>
   <div class="cmd-out">
@@ -38,6 +27,12 @@
     <span style="color:var(--fg-dim);">// CTF Player | Security Researcher | Breaking things to learn how they work</span>
   </div>
 </div>
+
+<nav class="path-nav">
+  <a href="index.html" class="active"><span class="tilde">~/</span>home</a>
+  <a href="about/index.html"><span class="tilde">~/</span>about</a>
+  <a href="blog/index.html"><span class="tilde">~/</span>writeups</a>
+</nav>
 
 <div class="cmd">
   <div class="cmd-line"><span class="d">$</span><span class="c">cat</span><span class="a">~/about.txt</span></div>
@@ -50,34 +45,29 @@
 
 <hr class="sep">
 
-<div class="cmd">
-  <div class="cmd-line"><span class="d">$</span><span class="c">tree</span><span class="a">~/</span></div>
-  <div class="cmd-out">
-    <div class="tree">
-      .<br>
-      &#9500;&#9472;&#9472; <a class="td" href="blog/index.html">blog/</a>&nbsp;&nbsp;<span style="color:var(--fg-dark)">// writeups &amp; posts</span><br>
-      &#9492;&#9472;&#9472; <a href="about/index.html" style="color:var(--fg)">about.md</a>
-    </div>
+<p class="section-lbl">Recent Writeups</p>
+<div class="wlist">
+  <a class="wcard" href="blog/reactor/index.html"><div><div class="wt">Reactor</div><div class="wm">Next.js React2Shell RCE &rarr; SQLite creds &rarr; Node debug port to root &middot; 2026-05-24</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge easy">Easy</span></div></a>
+  <a class="wcard" href="blog/index.html"><div><div class="wt">Silentium</div><div class="wm">Flowise RCE chain &rarr; env creds &rarr; Gogs CVE to root</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge soon">Coming soon</span></div></a>
+</div>
+
+<hr class="sep">
+
+<p class="section-lbl">Quick Links</p>
+<div class="cmd-out" style="margin-left:0;">
+  <div class="tree">
+    .<br>
+    &#9500;&#9472;&#9472; <a class="td" href="blog/index.html">writeups/</a><br>
+    &#9500;&#9472;&#9472;&#9500;&#9472;&#9472; <a class="td" href="blog/reactor/index.html">reactor.md</a><br>
+    &#9500;&#9472;&#9472;&#9492;&#9472;&#9472; silentium.md&nbsp;<span style="color:var(--fg-dark)">[coming soon]</span><br>
+    &#9492;&#9472;&#9472; <a href="about/index.html" style="color:var(--fg)">about.md</a>
   </div>
 </div>
 
 <hr class="sep">
 
-<div class="cmd">
-  <div class="cmd-line"><span class="d">$</span><span class="c">ls</span><span class="a">-t ~/blog/ | head -4</span></div>
-</div>
-<p class="section-lbl">Writeups &amp; Blog &mdash; <a href="blog/index.html">View all &rarr;</a></p>
-<div class="wlist">
-  <a class="wcard" href="blog/index.html"><div><div class="wt">First HTB writeup</div><div class="wm">machine breakdown &middot; coming soon</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge soon">Coming soon</span></div></a>
-  <a class="wcard" href="blog/index.html"><div><div class="wt">First THM room walkthrough</div><div class="wm">room breakdown &middot; coming soon</div></div><div class="wbadges"><span class="badge thm">THM</span><span class="badge soon">Coming soon</span></div></a>
-  <a class="wcard" href="blog/index.html"><div><div class="wt">CTF methodology notes</div><div class="wm">approach &amp; tooling &middot; coming soon</div></div><div class="wbadges"><span class="badge soon">Coming soon</span></div></a>
-  <a class="wcard" href="blog/index.html"><div><div class="wt">Reverse engineering basics</div><div class="wm">x86, stack mechanics &middot; coming soon</div></div><div class="wbadges"><span class="badge soon">Coming soon</span></div></a>
-</div>
-
-<hr class="sep">
-
-<pre class="cb" style="border-left:2px solid var(--green);margin-top:1rem;"><span style="color:var(--green)">System Status</span>
-<span class="dot"></span>Online | HTB: Active | THM: Top 3% | Writeups: coming soon
+<pre class="cb" style="border-left:2px solid var(--green);"><span style="color:var(--green)">System Status</span>
+<span class="dot"></span>Online | HTB: Active | THM: Top 3% | Writeups: 1 | Coming soon: 1
 shreekara@kali:~$ <span class="cursor"></span></pre>
 
 </main>
@@ -85,7 +75,6 @@ shreekara@kali:~$ <span class="cursor"></span></pre>
   <span>shreekara // security researcher</span>
   <span><a href="blog/index.html">writeups</a> · <a href="https://github.com/ShreekaraKedlaya" target="_blank">github</a></span>
 </footer>
-</div>
 </div>
 </body>
 </html>

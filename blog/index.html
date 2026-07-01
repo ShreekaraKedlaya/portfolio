@@ -10,17 +10,6 @@
 </head>
 <body>
 <div class="site">
-<aside class="sb">
-  <div class="sb-logo"><span class="handle">shreekara</span><span class="sub">security researcher · ctf player</span></div>
-  <nav><ul>
-    <li><a href="../index.html"><span class="tilde">~/</span>home</a></li>
-    <li><a href="../about/index.html"><span class="tilde">~/</span>about</a></li>
-    <li><a href="../blog/index.html" class="active"><span class="tilde">~/</span>blog</a></li>
-  </ul></nav>
-  <div class="sb-foot"><div><span class="dot"></span>online</div><div style="margin-top:6px;color:var(--fg-dark);">HTB · THM · CTFtime</div></div>
-</aside>
-
-<div class="content-wrap">
 <main>
 <div class="ascii"> ██████╗██╗  ██╗██████╗ ██████╗██████╗
  ██╔════╝██║  ██║██╔══██╗██╔════╝██╔════╝
@@ -30,17 +19,19 @@
  ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝╚═════╝</div>
 <div class="prompt-l"><span class="u">shreekara</span>@<span class="h">kali</span>:~/blog$</div>
 
+<nav class="path-nav">
+  <a href="../index.html"><span class="tilde">~/</span>home</a>
+  <a href="../about/index.html"><span class="tilde">~/</span>about</a>
+  <a href="../blog/index.html" class="active"><span class="tilde">~/</span>writeups</a>
+</nav>
 
 <div class="cmd">
   <div class="cmd-line"><span class="d">$</span><span class="c">ls</span><span class="a">-t ~/blog/</span></div>
-  <div class="cmd-out">4 entries queued &middot; nothing published yet, check back soon</div>
 </div>
 
 <div class="wlist" style="margin-top:0.8rem;">
-  <a class="wcard" href="#"><div><div class="wt">First HTB writeup</div><div class="wm">machine breakdown, enumeration to root</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge soon">Coming soon</span></div></a>
-  <a class="wcard" href="#"><div><div class="wt">First THM room walkthrough</div><div class="wm">room breakdown, step by step</div></div><div class="wbadges"><span class="badge thm">THM</span><span class="badge soon">Coming soon</span></div></a>
-  <a class="wcard" href="#"><div><div class="wt">CTF methodology notes</div><div class="wm">recon, tooling, and note-taking approach</div></div><div class="wbadges"><span class="badge soon">Coming soon</span></div></a>
-  <a class="wcard" href="#"><div><div class="wt">Reverse engineering basics</div><div class="wm">x86 registers, stack mechanics, function prologues</div></div><div class="wbadges"><span class="badge soon">Coming soon</span></div></a>
+  <a class="wcard" href="reactor/index.html"><div><div class="wt">Reactor</div><div class="wm">Next.js React2Shell RCE &rarr; SQLite creds &rarr; Node debug port to root &middot; 2026-05-24</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge easy">Easy</span></div></a>
+  <a class="wcard" href="#"><div><div class="wt">Silentium</div><div class="wm">Flowise RCE chain &rarr; env creds &rarr; Gogs CVE to root</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge soon">Coming soon</span></div></a>
 </div>
 
 <a class="back-link" href="../index.html">&lt; cd ~/</a>
@@ -50,7 +41,6 @@
   <span>shreekara // security researcher</span>
   <span><a href="../blog/index.html">writeups</a> · <a href="https://github.com/ShreekaraKedlaya" target="_blank">github</a></span>
 </footer>
-</div>
 </div>
 </body>
 </html>
