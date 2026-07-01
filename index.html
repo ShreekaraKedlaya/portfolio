@@ -12,13 +12,12 @@
 <div class="site">
 <main>
 
-<div class="ascii"> ██████╗██╗  ██╗██████╗ ██████╗██████╗
- ██╔════╝██║  ██║██╔══██╗██╔════╝██╔════╝
- █████╗ ███████║██████╔╝█████╗  █████╗  
- ╚════██╗██╔══██║██╔══██╗██╔══╝  ██╔══╝  
- ██████║██║  ██║██║  ██║██████╗██████╗
- ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝╚═════╝</div>
-<div class="prompt-l"><span class="u">shreekara</span>@<span class="h">kali</span>:~$</div>
+<div class="ascii">
+░█▀▀░█░█░█▀▄░█▀▀░█▀▀░█░█
+░▀▀█░█▀█░█▀▄░█▀▀░█▀▀░█▀▄
+░▀▀▀░▀░▀░▀░▀░▀▀▀░▀▀▀░▀░▀
+</div>
+<div class="prompt-l"><span class="u">shreekara</span>@<span class="h">sneaky69</span>:~$</div>
 
 <div class="cmd">
   <div class="cmd-line"><span class="d">$</span><span class="c">whoami</span></div>
@@ -31,7 +30,7 @@
 <nav class="path-nav">
   <a href="index.html" class="active"><span class="tilde">~/</span>home</a>
   <a href="about/index.html"><span class="tilde">~/</span>about</a>
-  <a href="blog/index.html"><span class="tilde">~/</span>writeups</a>
+  <a href="writeups/index.html"><span class="tilde">~/</span>writeups</a>
 </nav>
 
 <div class="cmd">
@@ -47,8 +46,11 @@
 
 <p class="section-lbl">Recent Writeups</p>
 <div class="wlist">
-  <a class="wcard" href="blog/reactor/index.html"><div><div class="wt">Reactor</div><div class="wm">Next.js React2Shell RCE &rarr; SQLite creds &rarr; Node debug port to root &middot; 2026-05-24</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge easy">Easy</span></div></a>
-  <a class="wcard" href="blog/index.html"><div><div class="wt">Silentium</div><div class="wm">Flowise RCE chain &rarr; env creds &rarr; Gogs CVE to root</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge soon">Coming soon</span></div></a>
+  <a class="wcard" href="writeups/reactor/index.html"><div><div class="wt">Reactor</div><div class="wm">Next.js React2Shell RCE &rarr; SQLite creds &rarr; Node debug port to root &middot; 2026-05-24</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge easy">Easy</span></div></a>
+  <a class="wcard" href="writeups/silentium/index.html"><div><div class="wt">Silentium</div><div class="wm">Flowise RCE chain &rarr; env creds &rarr; Gogs CVE to root</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge htb">HTB</span><span class="badge easy">Easy</span></div></a>
+  <a class="wcard" href="writeups/kobold/index.html"><div><div class="wt">Kobold</div><div class="wm"> exploiting a vulnerable application to gain initial access</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge htb">HTB</span><span class="badge easy">Easy</span></div></a>
+  <a class="wcard" href="writeups/cctv/index.html"><div><div class="wt">CCTV</div><div class="wm"> exploiting a vulnerable application to gain initial access</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge htb">HTB</span><span class="badge easy">Easy</span></div></a>
+
 </div>
 
 <hr class="sep">
@@ -57,9 +59,13 @@
 <div class="cmd-out" style="margin-left:0;">
   <div class="tree">
     .<br>
-    &#9500;&#9472;&#9472; <a class="td" href="blog/index.html">writeups/</a><br>
-    &#9500;&#9472;&#9472;&#9500;&#9472;&#9472; <a class="td" href="blog/reactor/index.html">reactor.md</a><br>
-    &#9500;&#9472;&#9472;&#9492;&#9472;&#9472; silentium.md&nbsp;<span style="color:var(--fg-dark)">[coming soon]</span><br>
+    &#9500;&#9472;&#9472; <a class="td" href="writeups/index.html">writeups/</a><br>
+    &#9500;&#9472;&#9472;&#9500;&#9472;&#9472; <a class="td" href="https://github.com/ShreekaraKedlaya/Hackthebox-writeups/blob/main/Reactor.md">reactor.md</a><br>
+    &#9500;&#9472;&#9472;&#9500;&#9472;&#9472; <a class="td" href="https://github.com/ShreekaraKedlaya/Hackthebox-writeups/blob/main/Silentium.md">silentium.md</a><br>
+    &#9500;&#9472;&#9472;&#9500;&#9472;&#9472; <a class="td" href="https://github.com/ShreekaraKedlaya/Hackthebox-writeups/blob/main/Kobold.md">Kobold.md</a><br>
+    &#9500;&#9472;&#9472;&#9500;&#9472;&#9472; <a class="td" href="https://github.com/ShreekaraKedlaya/Hackthebox-writeups/blob/main/cctv.md">cctv.md</a><br>
+
+
     &#9492;&#9472;&#9472; <a href="about/index.html" style="color:var(--fg)">about.md</a>
   </div>
 </div>
@@ -67,13 +73,13 @@
 <hr class="sep">
 
 <pre class="cb" style="border-left:2px solid var(--green);"><span style="color:var(--green)">System Status</span>
-<span class="dot"></span>Online | HTB: Active | THM: Top 3% | Writeups: 1 | Coming soon: 1
-shreekara@kali:~$ <span class="cursor"></span></pre>
+<span class="dot"></span>Online | HTB: Active | THM: Top 3% | Writeups: 4 | Coming soon: 3
+shreekara@sneaky69:~$ <span class="cursor"></span></pre>
 
 </main>
 <footer>
   <span>shreekara // security researcher</span>
-  <span><a href="blog/index.html">writeups</a> · <a href="https://github.com/ShreekaraKedlaya" target="_blank">github</a></span>
+  <span><a href="writeups/index.html">writeups</a> · <a href="https://github.com/ShreekaraKedlaya" target="_blank">github</a></span>
 </footer>
 </div>
 </body>
