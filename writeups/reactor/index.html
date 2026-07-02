@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Reactor | shreekara@sec</title>
+<meta name="description" content="HTB Reactor: Next.js React2Shell RCE, SQLite credential extraction, Node debug port privesc to root.">
+<link rel="icon" type="image/png" href="../../assets/img/favicon-32.png">
+<link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Reactor | shreekara@sec">
+<meta property="og:description" content="HTB Reactor: Next.js React2Shell RCE, SQLite credential extraction, Node debug port privesc to root.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sneakyyy.site/writeups/reactor/index.html">
+<meta property="og:image" content="../../assets/img/splash2.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../assets/css/style.css">
@@ -11,7 +20,7 @@
 <body>
 <div class="site">
 <main>
-<div class="prompt-l"><span class="u">shreekara</span>@<span class="h">kali</span>:~/blog/reactor$</div>
+<div class="prompt-l"><span class="u">shreekara</span>@<span class="h">sneaky69</span>:~/writeups/reactor$</div>
 
 <nav class="path-nav">
   <a href="../../index.html"><span class="tilde">~/</span>home</a>
@@ -226,17 +235,16 @@
 </table>
 
 <p style="color:var(--white);font-weight:700;margin-top:1.2rem;">What I Took Away From This Box</p>
-<p style="margin-top:0.6rem;"><strong style="color:var(--white);">Don't expose dashboards without authentication, even "read-only" ones.</strong> The unauthenticated ReactorWatch panel handed over personnel names and the full technology stack. That info directly led to the right CVE. Operational dashboards should always be behind auth.</p>
-<p style="margin-top:0.6rem;"><strong style="color:var(--white);">Version headers are free recon for attackers.</strong> The <code style="color:var(--cyan);">X-Powered-By: Next.js</code> header made version fingerprinting trivial. Stripping those headers won't stop a determined attacker, but it removes the easy path.</p>
-<p style="margin-top:0.6rem;"><strong style="color:var(--white);">SQLite databases in app directories are credential goldmines.</strong> If a web app ships with a readable database file containing password hashes, that's credentials left exactly where an attacker will look first. Secrets belong outside the web root with tight file permissions.</p>
-<p style="margin-top:0.6rem;"><strong style="color:var(--white);">--inspect on a root process is a root shell waiting to happen.</strong> The Chrome DevTools Protocol gives full JavaScript execution inside the process — no sandboxing. Any Node.js service running as a privileged user with <code style="color:var(--cyan);">--inspect</code> active, even bound to localhost, becomes a privilege escalation vector the moment someone gets a low-priv shell and can SSH-tunnel to it. Production services should never run with inspect flags enabled.</p>
+<p style="margin-top:0.6rem;">The thing that stuck with me here is how much of the chain came from stuff that wasn't technically a vulnerability on its own. An unauthenticated dashboard handing out personnel names and stack details isn't an exploit, it's just bad defaults &mdash; but it's exactly what told me where to look for the real CVE. Same with the <code style="color:var(--cyan);">X-Powered-By</code> header: nobody strips that on a dev box, and it saved me a lot of guessing on version fingerprinting.</p>
+<p style="margin-top:0.6rem;">The SQLite file sitting readable in the app directory was the part that annoyed me most, honestly, because it's such a common mistake. If your DB lives inside the web root with world-readable perms, you've basically pre-cracked your own creds for whoever gets a foothold.</p>
+<p style="margin-top:0.6rem;">Root cause of the privesc was a maintenance script running with <code style="color:var(--cyan);">--inspect</code> as root. I hadn't actually exploited a Node debug port before this box, so getting <code style="color:var(--cyan);">process.mainModule.require</code> to hand me code execution was the highlight for me. Once I had that, the rest was just tunneling and catching a shell &mdash; but the debug port thing is going straight into my privesc checklist for future boxes.</p>
 
-<a class="back-link" href="../../blog/index.html">&lt; cd ~/writeups</a>
+<a class="back-link" href="../../writeups/index.html">&lt; cd ~/writeups</a>
 
 </main>
 <footer>
   <span>shreekara // security researcher</span>
-  <span><a href="../../blog/index.html">writeups</a> · <a href="https://github.com/ShreekaraKedlaya" target="_blank">github</a></span>
+  <span><a href="../../writeups/index.html">writeups</a> · <a href="https://github.com/ShreekaraKedlaya" target="_blank">github</a></span>
 </footer>
 </div>
 </body>

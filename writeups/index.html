@@ -3,7 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Blog | shreekara@sec</title>
+<title>Writeups | shreekara@sec</title>
+<meta name="description" content="HTB write-ups: Reactor, Kobold, CCTV, Silentium — full recon-to-root breakdowns.">
+<link rel="icon" type="image/png" href="../assets/img/favicon-32.png">
+<link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Writeups | shreekara@sec">
+<meta property="og:description" content="HTB write-ups: Reactor, Kobold, CCTV, Silentium — full recon-to-root breakdowns.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sneakyyy.site/writeups/index.html">
+<meta property="og:image" content="../assets/img/splash2.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/css/style.css">
@@ -16,12 +25,13 @@
 ░▀▀█░█▀█░█▀▄░█▀▀░█▀▀░█▀▄
 ░▀▀▀░▀░▀░▀░▀░▀▀▀░▀▀▀░▀░▀
 </div>
-<div class="prompt-l"><span class="u">shreekara</span>@<span class="h">kali</span>:~/writeups$</div>
+<div class="prompt-l"><span class="u">shreekara</span>@<span class="h">sneaky69</span>:~/writeups$</div>
 
 <nav class="path-nav">
   <a href="../index.html"><span class="tilde">~/</span>home</a>
   <a href="../about/index.html"><span class="tilde">~/</span>about</a>
-  <a href="../blog/index.html" class="active"><span class="tilde">~/</span>writeups</a>
+  <a href="../writeups/index.html" class="active"><span class="tilde">~/</span>writeups</a>
+  <a href="../projects/index.html"><span class="tilde">~/</span>projects</a>
 </nav>
 
 <div class="cmd">
@@ -30,9 +40,9 @@
 
 <div class="wlist" style="margin-top:0.8rem;">
   <a class="wcard" href="reactor/index.html"><div><div class="wt">Reactor</div><div class="wm">Next.js React2Shell RCE &rarr; SQLite creds &rarr; Node debug port to root &middot; 2026-05-24</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge easy">Easy</span></div></a>
-  <a class="wcard" href="#"><div><div class="wt">Silentium</div><div class="wm">Flowise RCE chain &rarr; env creds &rarr; Gogs CVE to root</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge easy">Easy</span></div></a>
-  <a class="wcard" href="writeups/kobold/index.html"><div><div class="wt">Kobold</div><div class="wm"> exploiting a vulnerable application to gain initial access</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge easy">Easy</span></div></a>
-  <a class="wcard" href="writeups/cctv/index.html"><div><div class="wt">CCTV</div><div class="wm"> exploiting a vulnerable application to gain initial access</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge easy">Easy</span></div></a>
+  <a class="wcard" href="kobold/index.html"><div><div class="wt">Kobold</div><div class="wm">MCP tool RCE (CVE-2026-23520) &rarr; Docker socket abuse &rarr; chroot escape &middot; 2026-06-11</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge easy">Easy</span></div></a>
+  <a class="wcard" href="cctv/index.html"><div><div class="wt">CCTV</div><div class="wm">ZoneMinder SQLi (CVE-2024-51482) &rarr; hash crack &rarr; motionEye RCE to root &middot; 2026-06-02</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge easy">Easy</span></div></a>
+  <a class="wcard" href="silentium/index.html"><div><div class="wt">Silentium</div><div class="wm">Flowise RCE chain &rarr; env creds &rarr; Gogs CVE to root &middot; 2026-05-30</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge med">Medium</span></div></a>
 
 </div>
 
@@ -41,7 +51,7 @@
 </main>
 <footer>
   <span>shreekara // security researcher</span>
-  <span><a href="../writeups/index.html">writeups</a> · <a href="https://github.com/ShreekaraKedlaya" target="_blank">github</a></span>
+  <span><a href="../projects/index.html">projects</a> · <a href="https://github.com/ShreekaraKedlaya" target="_blank">github</a></span>
 </footer>
 </div>
 </body>

