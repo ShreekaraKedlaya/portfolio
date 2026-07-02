@@ -9,6 +9,15 @@
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
+<div class="splash" id="splash">
+  <div class="splash-bg"></div>
+  <div class="splash-overlay"></div>
+  <div class="splash-content">
+    <div class="sh">shreekara</div>
+    <div class="sl">initializing profile&hellip;</div>
+    <div class="sp"></div>
+  </div>
+</div>
 <div class="site">
 <main>
 
@@ -20,8 +29,8 @@
 <div class="prompt-l"><span class="u">shreekara</span>@<span class="h">sneaky69</span>:~$</div>
 
 <div class="cmd">
-  <div class="cmd-line"><span class="d">$</span><span class="c">whoami</span></div>
-  <div class="cmd-out">
+  <div class="cmd-line"><span class="d">$</span><span class="c" id="ty-cmd"></span><span class="cursor" id="ty-cursor"></span></div>
+  <div class="cmd-out" id="ty-out" style="opacity:0;transition:opacity 0.4s ease;">
     <span style="color:var(--white);font-size:14px;font-weight:700;">shreekara</span><br>
     <span style="color:var(--fg-dim);">// CTF Player | Security Researcher | Breaking things to learn how they work</span>
   </div>
@@ -83,5 +92,44 @@ shreekara@sneaky69:~$ <span class="cursor"></span></pre>
   <span><a href="writeups/index.html">writeups</a> · <a href="https://github.com/ShreekaraKedlaya" target="_blank">github</a></span>
 </footer>
 </div>
+<script>
+(function () {
+  var variants = ['splash-v1', 'splash-v2', 'splash-v3'];
+  var splash = document.getElementById('splash');
+  var pick = variants[Math.floor(Math.random() * variants.length)];
+  splash.classList.add(pick);
+  document.body.style.overflow = 'hidden';
+
+  setTimeout(function () {
+    splash.classList.add('hide');
+    document.body.style.overflow = '';
+    setTimeout(function () { splash.style.display = 'none'; }, 850);
+  }, 4000);
+})();
+</script>
+
+<script>
+(function () {
+  var text = "whoami";
+  var cmdEl = document.getElementById('ty-cmd');
+  var cursorEl = document.getElementById('ty-cursor');
+  var outEl = document.getElementById('ty-out');
+  var speed = 90;
+  var i = 0;
+
+  function type() {
+    if (i < text.length) {
+      cmdEl.textContent += text.charAt(i);
+      i++;
+      setTimeout(type, speed);
+    } else {
+      cursorEl.style.display = 'none';
+      outEl.style.opacity = '1';
+    }
+  }
+
+  setTimeout(type, 400);
+})();
+</script>
 </body>
 </html>
