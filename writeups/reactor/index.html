@@ -16,7 +16,8 @@
 <nav class="path-nav">
   <a href="../../index.html"><span class="tilde">~/</span>home</a>
   <a href="../../about/index.html"><span class="tilde">~/</span>about</a>
-  <a href="../../blog/index.html" class="active"><span class="tilde">~/</span>writeups</a>
+  <a href="../../writeups/index.html" class="active"><span class="tilde">~/</span>writeups</a>
+  <a href="../../projects/index.html"><span class="tilde">~/</span>projects</a>
 </nav>
 
 <div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">cat</span><span class="a">reactor.md</span></div></div>
@@ -230,7 +231,7 @@
 <p style="margin-top:0.6rem;"><strong style="color:var(--white);">SQLite databases in app directories are credential goldmines.</strong> If a web app ships with a readable database file containing password hashes, that's credentials left exactly where an attacker will look first. Secrets belong outside the web root with tight file permissions.</p>
 <p style="margin-top:0.6rem;"><strong style="color:var(--white);">--inspect on a root process is a root shell waiting to happen.</strong> The Chrome DevTools Protocol gives full JavaScript execution inside the process — no sandboxing. Any Node.js service running as a privileged user with <code style="color:var(--cyan);">--inspect</code> active, even bound to localhost, becomes a privilege escalation vector the moment someone gets a low-priv shell and can SSH-tunnel to it. Production services should never run with inspect flags enabled.</p>
 
-<a class="back-link" href="../../blog/index.html">&lt; cd ~/blog</a>
+<a class="back-link" href="../../blog/index.html">&lt; cd ~/writeups</a>
 
 </main>
 <footer>
