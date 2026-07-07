@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Turning a Dead Laptop Into My Personal NAS | shreekara@sec</title>
+<meta name="description" content="Build log: turning an old laptop into a home NAS with Ubuntu Server and CasaOS, and fighting a locked-down ISP router along the way.">
+<link rel="icon" type="image/png" href="../../assets/img/favicon-32.png">
+<link rel="apple-touch-icon" href="../../assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Turning a Dead Laptop Into My Personal NAS | shreekara@sec">
+<meta property="og:description" content="Build log: turning an old laptop into a home NAS with Ubuntu Server and CasaOS, and fighting a locked-down ISP router along the way.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sneakyyy.site/blog/nas-build/nas-build.html">
+<meta property="og:image" content="../../assets/img/splash2.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body>
+<div class="site">
+<main>
+<div class="prompt-l"><span class="u">shreekara</span>@<span class="h">sneaky69</span>:~/blog/nas-build$</div>
+
+<nav class="path-nav">
+  <a href="../../index.html"><span class="tilde">~/</span>home</a>
+  <a href="../../about/about.html"><span class="tilde">~/</span>about</a>
+  <a href="../../writeups/writeups.html"><span class="tilde">~/</span>writeups</a>
+  <a href="../../projects/projects.html"><span class="tilde">~/</span>projects</a>
+  <a href="../../experience/experience.html"><span class="tilde">~/</span>experience</a>
+  <a href="../../blog/blog.html" class="active"><span class="tilde">~/</span>blog</a>
+</nav>
+
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">cat</span><span class="a">nas-build.md</span></div></div>
+
+<h1 style="color:var(--white);font-size:20px;margin-bottom:0.6rem;">Turning a Dead Laptop Into My Personal NAS</h1>
+<p style="color:var(--fg-dim);font-size:11px;margin-bottom:1rem;">July 07, 2026</p>
+
+<hr class="sep">
+
+<p>So I had this old laptop just lying around, doing absolutely nothing. It had a 1TB hard drive sitting inside it, which felt like a waste, so I figured &mdash; why not turn this thing into a personal NAS at home. Something I could maybe upgrade into actual cloud storage later on if it worked out.</p>
+<p>Here's how it actually went.</p>
+
+<hr class="sep">
+
+<p class="section-lbl">Wiping It and Starting Fresh</p>
+<p>First thing I did was wipe the entire laptop clean. Didn't want any leftover junk from whatever it was being used for before. Clean install, nothing else on it.</p>
+<p>Went with Ubuntu Server on top. No desktop environment, no GUI, none of that &mdash; just the bare server OS, since that's really all a NAS needs to run.</p>
+
+<hr class="sep">
+
+<p class="section-lbl">Getting CasaOS On It</p>
+<p>Once Ubuntu Server was up, I installed CasaOS with:</p>
+<div class="cmd"><div class="cmd-line"><span class="d">$</span><span class="c">curl</span><span class="a">-fsSL https://get.casaos.io | sudo bash</span></div></div>
+<p>That was it, one line, and suddenly I had a proper web interface for managing the thing &mdash; files, apps, all of it &mdash; instead of doing everything through SSH like some caveman.</p>
+
+<hr class="sep">
+
+<p class="section-lbl">Then Came the Actual Problem &mdash; My Wifi</p>
+<p>This is where things got annoying, honestly.</p>
+<p>I'm on Airtel, and their router is basically useless if you want to configure anything on it yourself. It's controlled through their app, and there's barely any settings exposed. I couldn't even assign a static IP to a device on it &mdash; it just does its own thing and doesn't care what you want.</p>
+<p>And for a NAS, that's a real problem, because you need it to have a fixed address on the network so other devices can actually find it reliably.</p>
+
+<hr class="sep">
+
+<p class="section-lbl">Bringing In an Old TP-Link Router to Fix It</p>
+<p>Luckily I had another router lying around from an old ISP &mdash; a TP-Link one. And unlike the Airtel router, this one actually lets you get into the settings and configure things properly.</p>
+<p>So instead of fighting the Airtel router, I just connected the TP-Link one behind it. Airtel router stayed as the main connection to the internet, and the TP-Link one created its own little network behind that &mdash; kind of like my own separate network hanging off the main one. Not entirely sure what the "official" term for that setup is, but it worked. I could finally assign a proper IP to the laptop on this network, and once that was done, I could access the NAS from other devices without any issues, with CasaOS giving me that clean web interface to work with.</p>
+
+<hr class="sep">
+
+<p class="section-lbl">What's Next</p>
+<p>Eventually I want to get this reachable from outside my home network too, not just over local wifi &mdash; basically turn it into my own little cloud storage setup. Still figuring that part out.</p>
+<p style="margin-top:0.6rem;">If you've got an old laptop sitting around doing nothing, it's probably a better NAS than you'd think.</p>
+
+<a class="back-link" href="../../blog/blog.html">&lt; cd ~/blog</a>
+
+</main>
+<footer>
+  <span>shreekara // security researcher</span>
+  <span><a href="../../writeups/writeups.html">writeups</a> · <a href="https://github.com/ShreekaraKedlaya" target="_blank">github</a></span>
+</footer>
+</div>
+</body>
+</html>

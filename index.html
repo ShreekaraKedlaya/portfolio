@@ -18,13 +18,18 @@
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-<div class="splash" id="splash">
+<div class="splash" id="splash" style="cursor:pointer;">
   <div class="splash-bg"></div>
   <div class="splash-overlay"></div>
   <div class="splash-name">shreekara</div>
   <div class="splash-role"><span class="sp">
 </span>Security Researcher<br>
 initializing profile</div>
+
+  <div class="splash-skip">
+    <div class="splash-skip-txt">double tap to skip</div>
+    <div class="splash-skip-track"><div class="splash-skip-bar" id="splashBar"></div></div>
+  </div>
 </div>
 <div class="site">
 <main>
@@ -46,10 +51,11 @@ initializing profile</div>
 
 <nav class="path-nav">
   <a href="index.html" class="active"><span class="tilde">~/</span>home</a>
-  <a href="about/index.html"><span class="tilde">~/</span>about</a>
-  <a href="writeups/index.html"><span class="tilde">~/</span>writeups</a>
-  <a href="projects/index.html"><span class="tilde">~/</span>projects</a>
-  <a href="experience/index.html"><span class="tilde">~/</span>experience</a>
+  <a href="about/about.html"><span class="tilde">~/</span>about</a>
+  <a href="writeups/writeups.html"><span class="tilde">~/</span>writeups</a>
+  <a href="projects/projects.html"><span class="tilde">~/</span>projects</a>
+  <a href="experience/experience.html"><span class="tilde">~/</span>experience</a>
+  <a href="blog/blog.html"><span class="tilde">~/</span>blog</a>
 </nav>
 
 <div class="cmd">
@@ -66,10 +72,10 @@ initializing profile</div>
 
 <p class="section-lbl">Recent Writeups</p>
 <div class="wlist">
-  <a class="wcard" href="writeups/reactor/index.html"><div><div class="wt">Reactor</div><div class="wm">Next.js React2Shell RCE &rarr; SQLite creds &rarr; Node debug port to root &middot; 2026-05-24</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge easy">Easy</span></div></a>
-  <a class="wcard" href="writeups/kobold/index.html"><div><div class="wt">Kobold</div><div class="wm">MCP tool RCE (CVE-2026-23520) &rarr; Docker socket abuse &rarr; chroot escape &middot; 2026-06-11</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge easy">Easy</span></div></a>
-  <a class="wcard" href="writeups/cctv/index.html"><div><div class="wt">CCTV</div><div class="wm">ZoneMinder SQLi (CVE-2024-51482) &rarr; hash crack &rarr; motionEye RCE to root &middot; 2026-06-02</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge easy">Easy</span></div></a>
-  <a class="wcard" href="writeups/silentium/index.html"><div><div class="wt">Silentium</div><div class="wm">Flowise RCE chain &rarr; env creds &rarr; Gogs CVE to root &middot; 2026-05-30</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge med">Medium</span></div></a>
+  <a class="wcard" href="writeups/reactor/reactor.html"><div><div class="wt">Reactor</div><div class="wm">Next.js React2Shell RCE &rarr; SQLite creds &rarr; Node debug port to root &middot; 2026-05-24</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge easy">Easy</span></div></a>
+  <a class="wcard" href="writeups/kobold/kobold.html"><div><div class="wt">Kobold</div><div class="wm">MCP tool RCE (CVE-2026-23520) &rarr; Docker socket abuse &rarr; chroot escape &middot; 2026-06-11</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge easy">Easy</span></div></a>
+  <a class="wcard" href="writeups/cctv/cctv.html"><div><div class="wt">CCTV</div><div class="wm">ZoneMinder SQLi (CVE-2024-51482) &rarr; hash crack &rarr; motionEye RCE to root &middot; 2026-06-02</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge easy">Easy</span></div></a>
+  <a class="wcard" href="writeups/silentium/silentium.html"><div><div class="wt">Silentium</div><div class="wm">Flowise RCE chain &rarr; env creds &rarr; Gogs CVE to root &middot; 2026-05-30</div></div><div class="wbadges"><span class="badge htb">HTB</span><span class="badge med">Medium</span></div></a>
 
 </div>
 
@@ -79,14 +85,14 @@ initializing profile</div>
 <div class="cmd-out" style="margin-left:0;">
   <div class="tree">
     .<br>
-    &#9500;&#9472;&#9472; <a class="td" href="writeups/index.html">writeups/</a><br>
+    &#9500;&#9472;&#9472; <a class="td" href="writeups/writeups.html">writeups/</a><br>
     &#9500;&#9472;&#9472;&#9500;&#9472;&#9472; <a class="td" href="https://github.com/ShreekaraKedlaya/Hackthebox-writeups/blob/main/Reactor.md">reactor.md</a><br>
     &#9500;&#9472;&#9472;&#9500;&#9472;&#9472; <a class="td" href="https://github.com/ShreekaraKedlaya/Hackthebox-writeups/blob/main/silentium.md">silentium.md</a><br>
     &#9500;&#9472;&#9472;&#9500;&#9472;&#9472; <a class="td" href="https://github.com/ShreekaraKedlaya/Hackthebox-writeups/blob/main/Kobold.md">Kobold.md</a><br>
     &#9500;&#9472;&#9472;&#9500;&#9472;&#9472; <a class="td" href="https://github.com/ShreekaraKedlaya/Hackthebox-writeups/blob/main/cctv.md">cctv.md</a><br>
 
 
-    &#9492;&#9472;&#9472; <a href="about/index.html">about.md</a>
+    &#9492;&#9472;&#9472; <a href="about/about.html">about.md</a>
   </div>
 </div>
 
@@ -99,22 +105,42 @@ shreekara@sneaky69:~$ <span class="cursor"></span></pre>
 </main>
 <footer>
   <span>shreekara // security researcher</span>
-  <span><a href="writeups/index.html">writeups</a> · <a href="https://github.com/ShreekaraKedlaya" target="_blank">github</a></span>
+  <span><a href="writeups/writeups.html">writeups</a> · <a href="https://github.com/ShreekaraKedlaya" target="_blank">github</a></span>
 </footer>
 </div>
 <script>
 (function () {
   var variants = ['splash-v1', 'splash-v2', 'splash-v3'];
   var splash = document.getElementById('splash');
+  var bar = document.getElementById('splashBar');
+  var duration = 4000;
   var pick = variants[Math.floor(Math.random() * variants.length)];
   splash.classList.add(pick);
   document.body.style.overflow = 'hidden';
+  var dismissed = false;
 
-  setTimeout(function () {
+  bar.style.transition = 'width ' + duration + 'ms linear';
+  requestAnimationFrame(function () {
+    bar.style.width = '100%';
+  });
+
+  function dismiss() {
+    if (dismissed) return;
+    dismissed = true;
     splash.classList.add('hide');
     document.body.style.overflow = '';
     setTimeout(function () { splash.style.display = 'none'; }, 850);
-  }, 4000);
+  }
+
+  function dismissInstant() {
+    if (dismissed) return;
+    dismissed = true;
+    document.body.style.overflow = '';
+    splash.style.display = 'none';
+  }
+
+  splash.addEventListener('dblclick', dismissInstant);
+  setTimeout(dismiss, duration);
 })();
 </script>
 
